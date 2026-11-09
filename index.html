@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>TylerCast — what should Tyler wear?</title>
+<style>
+:root{
+  --bg:#f4f6fa; --card:#ffffff; --ink:#1b2430; --muted:#5d6b7c; --line:#e1e6ee; --accent:#3b82f6;
+  --radius:16px; --shadow:0 2px 10px rgba(20,30,50,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1319; --card:#171e27; --ink:#eef2f7; --muted:#9aa8b8; --line:#263140; --shadow:0 2px 10px rgba(0,0,0,.35); }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+.wrap{max-width:440px; margin:0 auto; padding:20px 16px 40px}
+header{text-align:center; margin-bottom:14px}
+h1{margin:0; font-size:28px; letter-spacing:-.5px}
+h1 span{color:var(--accent)}
+.tag{margin:2px 0 0; color:var(--muted); font-size:14px}
+form{display:flex; gap:8px; margin:14px 0 6px}
+input[type=search]{
+  flex:1; min-width:0; padding:11px 14px; font:inherit; color:var(--ink); background:var(--card);
+  border:1px solid var(--line); border-radius:12px; outline:none;
+}
+input[type=search]:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+button{
+  font:inherit; font-weight:600; border:0; border-radius:12px; padding:11px 16px; cursor:pointer;
+  background:var(--accent); color:#fff;
+}
+button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 40%,transparent); outline-offset:2px}
+.status{min-height:20px; margin:4px 2px 10px; font-size:13px; color:var(--muted)}
+.status.warn{color:#b45309} @media (prefers-color-scheme: dark){.status.warn{color:#fbbf24}}
+.picks{list-style:none; margin:0 0 10px; padding:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.picks li button{width:100%; text-align:start; background:transparent; color:var(--ink); border-radius:0; font-weight:500; border-bottom:1px solid var(--line)}
+.picks li:last-child button{border-bottom:0}
+.picks small{color:var(--muted)}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:12px; border-top:4px solid var(--accent)}
+.now{text-align:center; background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%,var(--card)),var(--card) 70%)}
+.now .place{font-weight:600; font-size:16px}
+.now .temp{font-size:68px; font-weight:700; line-height:1.05; letter-spacing:-2px; margin:4px 0}
+.now .icon{font-size:44px; line-height:1}
+.now .cond{font-size:16px; font-weight:600; color:var(--accent)}
+.now .meta{color:var(--muted); font-size:13px; margin-top:6px}
+h2{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:20px 2px 8px}
+.day-head{display:flex; align-items:center; gap:12px}
+.day-head .icon{font-size:34px}
+.day-head .d{flex:1}
+.day-head .name{font-weight:700; font-size:16px}
+.day-head .sub{color:var(--muted); font-size:13px}
+.day-head .hl{text-align:end; font-weight:700; font-size:18px}
+.day-head .hl span{color:var(--muted); font-weight:500}
+.badge{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; margin-inline-start:6px;
+  background:color-mix(in srgb,var(--accent) 18%,transparent); color:var(--accent); vertical-align:middle}
+.joke{margin:12px 0 10px; padding:10px 12px; border-radius:12px; background:color-mix(in srgb,var(--accent) 10%,var(--card)); }
+.label{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:10px 0 6px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; padding:0; margin:0; list-style:none}
+.chips li{font-size:13px; padding:4px 10px; border-radius:99px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); background:var(--card)}
+.oj{margin:10px 0 0; color:var(--muted); font-style:italic; font-size:14px}
+.card.tomorrow{border-width:2px; border-top-width:6px; border-color:var(--accent)}
+.card.tomorrow .joke{font-size:16px}
+footer{text-align:center; color:var(--muted); font-size:12px; margin-top:18px}
+@media (max-width:360px){ .now .temp{font-size:56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tyler<span>Cast</span></h1>
+    <p class="tag">Daily weather &amp; wardrobe advice for one (1) very opinionated 4-year-old</p>
+  </header>
+
+  <form id="f" autocomplete="off">
+    <input id="q" type="search" placeholder="Search a city…" aria-label="Search for a city" enterkeyhint="search">
+    <button type="submit">Search</button>
+  </form>
+  <ul id="picks" class="picks" hidden></ul>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <section id="now"></section>
+  <h2>Tyler's next 5 days</h2>
+  <section id="days"></section>
+
+  <footer>Weather from Open-Meteo · Fashion advice from a very tired parent</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var DEFAULT = {name:"Aurora", admin:"Illinois", country:"United States", lat:41.7606, lon:-88.3201};
+
+  /* ---------- Fallback data (used if the live request fails) ---------- */
+  function fallbackData(){
+    var t=new Date(), days=[], hi=[48,52,45,41,44,46], lo=[34,38,33,29,31,33], code=[3,61,2,71,1,3], pp=[10,70,20,60,5,15], wd=[12,18,10,22,9,11];
+    for(var i=0;i<6;i++){ var d=new Date(t.getFullYear(),t.getMonth(),t.getDate()+i); days.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")); }
+    return {current:{temperature_2m:44,apparent_temperature:39,weather_code:3,wind_speed_10m:11},
+      daily:{time:days,weather_code:code,temperature_2m_max:hi,temperature_2m_min:lo,precipitation_probability_max:pp,wind_speed_10m_max:wd}};
+  }
+
+  /* ---------- Weather helpers ---------- */
+  function cat(c){
+    if(c<=1) return "clear";
+    if(c<=3) return "cloud";
+    if(c===45||c===48) return "fog";
+    if((c>=51&&c<=67)||(c>=80&&c<=82)) return "rain";
+    if((c>=71&&c<=77)||c===85||c===86) return "snow";
+    if(c>=95) return "storm";
+    return "cloud";
+  }
+  var ACCENT={clear:"#f59e0b",cloud:"#64748b",rain:"#3b82f6",snow:"#06b6d4",storm:"#8b5cf6",fog:"#0d9488"};
+  function icon(c){
+    if(c===0||c===1) return "☀️"; if(c===2) return "⛅"; if(c===3) return "☁️";
+    if(c===45||c===48) return "🌫️"; if(c>=51&&c<=57) return "🌦️"; if((c>=61&&c<=67)||(c>=80&&c<=82)) return "🌧️";
+    if(c>=71&&c<=77) return "🌨️"; if(c===85||c===86) return "❄️"; if(c>=95) return "⛈️"; return "☁️";
+  }
+  function label(c){
+    var m={0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Foggy",48:"Icy fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",56:"Freezing drizzle",57:"Freezing drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",66:"Freezing rain",67:"Freezing rain",71:"Light snow",73:"Snow",75:"Heavy snow",77:"Snow grains",80:"Rain showers",81:"Rain showers",82:"Violent showers",85:"Snow showers",86:"Heavy snow showers",95:"Thunderstorm",96:"Thunderstorm & hail",99:"Thunderstorm & hail"};
+    return m[c]||"Weather";
+  }
+
+  /* ---------- Joke pools (picked by calendar date, so every day is different) ---------- */
+  var JOKES={
+    clear:[
+      "Sunny out. Tyler will announce \"I'm NOT cold\" at 8:01 and be proven wrong by 8:15.",
+      "Clear skies, zero excuses for why only one shoe is in the house.",
+      "Blue-sky day. Tyler's energy level: unsupervised fireworks.",
+      "Sunshine! Tyler will still locate the one puddle in the entire state of Illinois.",
+      "Perfect recess weather, which Tyler will spend inspecting one extremely interesting stick.",
+      "So sunny that Tyler's imaginary friend also needs sunscreen.",
+      "Bright out there. Tyler will squint dramatically like a tiny action hero.",
+      "Sun's out, which Tyler will celebrate by running everywhere except toward the car.",
+      "Gorgeous day. Peak conditions for \"Mom, WATCH THIS!\" (nothing will happen).",
+      "Clear skies, which is more than we can say for the mystery stain on yesterday's shirt."],
+    cloud:[
+      "Cloudy with a chance of \"I need to go potty\" the second the jacket is zipped.",
+      "Gray skies. Tyler calls this \"sad blanket weather.\" He's not wrong.",
+      "Overcast. The sky looks like it's thinking. Tyler is also thinking, about snacks.",
+      "Clouds all day, ideal cover for Tyler's secret mission: stomp every leaf in the zip code.",
+      "Meh weather, but Tyler's outfit does not have to be meh. Dinosaurs, anyone?",
+      "The sky is undecided. Tyler, however, has decided he is a shark today.",
+      "Gloomy, the exact color of the oatmeal Tyler refuses to eat.",
+      "Cloud cover. Tyler will insist the big one looks like a truck. It does not. Agree anyway.",
+      "Gray and chilly, like Tyler's face when told the cape stays home.",
+      "Overcast. Tyler will ask if the clouds are tired. Honestly? Same."],
+    rain:[
+      "Rain! Tyler's favorite puddle conditions and your least favorite laundry conditions.",
+      "Wet out there. Boots are not optional, they're a peace treaty.",
+      "Tyler will call umbrellas \"for babies\" right up until he's holding one like a lightsaber.",
+      "Expect one soaked sock and a heartfelt speech about how he \"didn't even go in the puddle.\"",
+      "He'll arrive at school dry and leave looking like a small, delighted sea creature.",
+      "Rainy boots squeak like a haunted duck. Tyler will make them squeak on purpose. All day.",
+      "Tyler will lick the rain. Do not ask. Do not stop him. Dry him.",
+      "Rainy day: spare socks are now a legally recognized form of love.",
+      "Tyler will name three raindrops and wave goodbye to one.",
+      "Rain gear on, Tyler looks like a very serious tiny fisherman. Hood stays up for 4 seconds."],
+    snow:[
+      "Snow! Getting dressed takes 45 minutes. He'll announce he has to pee at minute 44.",
+      "After layering, Tyler becomes a marshmallow with legs. Arms stick out. Dignity does not.",
+      "Flurries. One mitten will vanish and turn up in a cereal box in July.",
+      "Tyler will eat snow, declare it \"cold water,\" and eat more. He has a plan.",
+      "The puffy coat means he physically cannot put his arms down. Think of it as a hug from the coat.",
+      "Tyler will build a snowman for six minutes. You will haul it for forty.",
+      "Boots will go on the wrong feet at the exact moment you're already late. It's tradition.",
+      "Winter wonderland, small-child edition: 90% layers, 10% child.",
+      "Hat hair is guaranteed. Tyler will call it a hairstyle and honestly, commit to it.",
+      "Snow pants swish so loudly Tyler arrives like a tiny parade."],
+    storm:[
+      "Thunderstorms! Tyler will be either fearless or under the table with the dog. No middle ground.",
+      "Expect a lot of \"that was BIG thunder\" commentary, delivered in a whisper.",
+      "Tyler will count the seconds between flash and boom: \"one, nine, banana.\"",
+      "Lightning outside, lightning-fast excuses inside: \"one more hug, and water, and a flashlight.\"",
+      "Thunder is \"the sky's tummy.\" Honestly, solid theory.",
+      "Tyler will say he's \"not scared\" while gripping your leg like a koala.",
+      "Storm day: dress for rain, pack courage, bring the monster stuffie.",
+      "Wild weather. Dress him like a tiny deep-sea captain and send him in with confidence.",
+      "Big boom today. Tyler will review it like a movie: \"Too loud. Four stars.\"",
+      "Stormy skies. Tyler's rain jacket is a superhero cape that only works during thunder."],
+    fog:[
+      "Foggy. Tyler will announce \"the clouds came down to say hi.\" Perfect. No notes.",
+      "Mist and mystery. Detective Tyler's case: where did the neighbor's house go?",
+      "Fog! Visibility low, kid energy high.",
+      "Misty windows: Tyler will draw a smiley face on every one. Forever.",
+      "Tyler's hair will match the weather: unplanned and everywhere.",
+      "It's dragon breath, obviously. Do not argue with dragon experts.",
+      "Low visibility, so Tyler will walk into the door frame while looking at his shoes.",
+      "Gray mist. A bright jacket is both a safety feature AND a fashion statement.",
+      "Foggy morning. Tyler is not foggy. Tyler is fully operational and asking why for the 41st time.",
+      "Spooky fog. Tyler will insist on a ghost sighting. It's the mailbox."]
+  };
+
+  var BAND_ITEMS={
+    freezing:["Insulated winter coat","Snow pants","Warm hat + mittens","Thermal base layer","Wool socks + boots","Neck warmer"],
+    cold:["Warm winter coat","Hat + gloves","Long sleeves + fleece","Warm pants + socks","Closed-toe shoes"],
+    cool:["Light jacket or hoodie","Long sleeves","Pants","Sneakers","Light layer for the backpack"],
+    mild:["Tee or long sleeve","Pants or shorts","Light layer in backpack","Sneakers"],
+    warm:["Breathable tee","Shorts","Sun hat + sunscreen","Sneakers or sandals"],
+    hot:["Lightest tee in the drawer","Shorts","Sun hat + sunscreen","Water bottle"]
+  };
+  var OUTFIT_JOKES={
+    freezing:[
+      "Layer like an onion, but one that complains about the layers.",
+      "Goal: warm enough to survive, mobile enough to flop over like a starfish.",
+      "If he can bend his elbows, you didn't layer hard enough.",
+      "Pack the spare mittens. The first pair is already plotting its escape.",
+      "He'll look like a tiny astronaut. He'll move like one too. Both are fine.",
+      "Tyler's definition of \"too many layers\" is \"I can't scratch my nose.\" Do not negotiate.",
+      "Hat on, hood up, and the whole thing zipped to the chin. He now has the vision of a turtle.",
+      "Zip it up before he realizes what's happening. Speed is your only advantage."],
+    cold:[
+      "Coat on. He'll say he's hot after four minutes. Ignore him; this is a lie.",
+      "Hats are fashion AND physics. Sell it that way.",
+      "Gloves get lost, so pack two pairs. Tyler is a magician, and gloves are his trick.",
+      "Zip the coat before he gets to the car or it's a 10-minute \"I don't WANT to.\"",
+      "Warm socks are the unsung heroes. Tyler will take them off the second you turn around.",
+      "He will refuse the hat, then wear it on his face. Settle for either.",
+      "Fleece is a cheat code. Soft, warm, and acceptable to a 4-year-old fashion critic.",
+      "Layers! If Tyler gets warm, he can shed them in a single dramatic gesture."],
+    cool:[
+      "Hoodie weather. Tyler will wear it hood-on, arms-out, as a bat.",
+      "Light jacket: the Goldilocks outfit. Not too hot, not too cold, easily lost.",
+      "Pack a layer in the backpack. A 4-year-old's thermostat is basically a coin toss.",
+      "Sneakers on, double-knot them, say a small prayer. They'll still come undone by 9:15.",
+      "Tyler will insist the jacket is \"too hot\" and then ask to wear it inside the car. Nobody knows.",
+      "If the jacket survives the morning, that's a win. If it comes home, that's a miracle.",
+      "Long sleeves. Tyler will push them up to his elbows like a tiny mechanic.",
+      "Dress him like a tiny golf dad: practical, layered, and ready for anything."],
+    mild:[
+      "Nice weather. The wardrobe's wide open. Tyler will pick the wrong thing anyway.",
+      "Tee and pants. Tyler will find a way to make this look like a costume.",
+      "A light layer in the backpack, because the weather lies and so does Tyler about being cold.",
+      "Dress code: comfortable, washable, and ready for a surprise juice spill.",
+      "If it has a dinosaur on it, he'll wear it. If it doesn't, argue for a dinosaur.",
+      "Easy day. The only battle: socks. There's always a battle about socks.",
+      "Normal-person weather, so you can all briefly feel like normal people.",
+      "Shorts or pants? He'll choose pants, then ask for shorts at 10 AM. Pack both."],
+    warm:[
+      "Tee, shorts, sunscreen. Congratulations, you are now the best-dressed parent on the block.",
+      "Sunscreen goes on with the efficiency of a toddler wrestling a squirrel. Try anyway.",
+      "Hat on! He will remove it within 90 seconds. Bonus points for the sneaky re-hat.",
+      "Light clothes. They'll still come home looking like they lost a fight with a mud puddle.",
+      "Shorts weather. Expect knees with a story to tell.",
+      "Water bottle in the backpack, because Tyler's thirst only appears when there's none.",
+      "He'll insist on the winter hat in this heat. Pick your battles; let him sweat in style.",
+      "Sandals are allowed. Closed-toe is better for recess. He'll wear the sandals and lose one."],
+    hot:[
+      "Hot enough that Tyler will request that the sun \"go inside.\"",
+      "Lightest outfit possible, plus the sunscreen he'll flee from like a tiny greased pig.",
+      "Sun hat, sunscreen, water. Tyler's three least favorite things, all in one morning.",
+      "Dress him in the cloth equivalent of air.",
+      "It's so hot that the only acceptable accessories are a smile and an ice pop.",
+      "Pack a spare shirt. He will sweat through the first one before morning snack.",
+      "Shade is a love language. Send him with a hat. He'll bring it home, still clean, still unworn.",
+      "Tyler: \"I'm melting.\" Also Tyler: \"Can I wear my fuzzy dinosaur hoodie?\" No."]
+  };
+  var ADDON_JOKES={
+    rain:"Rain gear check: jacket with a hood, boots, and one spare pair of socks in the backpack.",
+    snow:"Snow check: waterproof boots, snow pants, and mittens, plus a backup pair of mittens for the ones he'll lose.",
+    storm:"Storm check: rain jacket, boots, spare socks, and a pre-planned \"it's just the sky's tummy\" speech.",
+    wind:"Windy out there. A hat that ties under the chin means it stays on. In theory."
+  };
+
+  function dayNum(iso){ var p=iso.split("-"); return Math.floor(Date.UTC(+p[0],+p[1]-1,+p[2])/864e5); }
+  function pick(pool, key, n, step, used){
+    var idx=((n*step)+key)%pool.length; var guard=0;
+    while(used[key+"-"+idx] && guard++<pool.length) idx=(idx+1)%pool.length;
+    used[key+"-"+idx]=true; return pool[idx];
+  }
+
+  function band(t){ if(t<=32) return "freezing"; if(t<=45) return "cold"; if(t<=59) return "cool"; if(t<=72) return "mild"; if(t<=84) return "warm"; return "hot"; }
+
+  /* ---------- Render ---------- */
+  var $=function(id){return document.getElementById(id)};
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  var DOW=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  function render(place,data,isFallback){
+    var cur=data.current, d=data.daily;
+    var curCat=cat(cur.weather_code);
+    document.documentElement.style.setProperty("--accent",ACCENT[curCat]);
+
+    $("now").innerHTML='<div class="card now">'
+      +'<div class="place">'+esc(place.name)+(place.admin?', '+esc(place.admin):'')+'</div>'
+      +'<div class="icon" aria-hidden="true">'+icon(cur.weather_code)+'</div>'
+      +'<div class="temp">'+Math.round(cur.temperature_2m)+'°F</div>'
+      +'<div class="cond">'+label(cur.weather_code)+'</div>'
+      +'<div class="meta">Feels like '+Math.round(cur.apparent_temperature)+'° · Wind '+Math.round(cur.wind_speed_10m)+' mph · Today '+Math.round(d.temperature_2m_max[0])+'° / '+Math.round(d.temperature_2m_min[0])+'°</div>'
+      +'</div>';
+
+    var used={}, html="";
+    for(var i=1;i<=5 && i<d.time.length;i++){
+      var iso=d.time[i], n=dayNum(iso), p=iso.split("-");
+      var dt=new Date(+p[0],+p[1]-1,+p[2]), dow=dt.getDay();
+      var c=d.weather_code[i], k=cat(c), hi=d.temperature_2m_max[i], lo=d.temperature_2m_min[i];
+      var pop=d.precipitation_probability_max?d.precipitation_probability_max[i]:0;
+      var wind=d.wind_speed_10m_max?d.wind_speed_10m_max[i]:0;
+      var dressT=lo+0.4*(hi-lo), b=band(dressT);
+
+      var items=BAND_ITEMS[b].slice();
+      var addon=null;
+      if(k==="storm"){ items.unshift("Rain jacket + boots"); addon="storm"; }
+      else if(k==="rain"||pop>=50){ items.unshift("Rain jacket + boots","Spare socks"); addon="rain"; }
+      else if(k==="snow"){ if(b!=="freezing"){items.unshift("Snow pants");} items.unshift("Waterproof boots + mittens"); addon="snow"; }
+      if(wind>=20){ items.push("Hat that stays on"); if(!addon) addon="wind"; }
+      items=items.filter(function(v,ix,a){return a.indexOf(v)===ix}).slice(0,7);
+
+      var wj=pick(JOKES[k],"w"+k,n,7,used);
+      var oj=pick(OUTFIT_JOKES[b],"o"+b,n,3,used);
+      var school=(dow>=1&&dow<=5);
+      var tag=(i===1)?'<span class="badge">'+(school?'Tomorrow · school':'Tomorrow · no school')+'</span>':(school?'':'<span class="badge">No school</span>');
+      var weekend=(!school)?'<div class="oj">No school: pajamas are officially a valid outfit.</div>':'';
+      html+='<article class="card'+(i===1?' tomorrow':'')+'" style="--accent:'+ACCENT[k]+'">'
+        +'<div class="day-head"><div class="icon" aria-hidden="true">'+icon(c)+'</div>'
+        +'<div class="d"><div class="name">'+(i===1?'Tomorrow':DOW[dow])+tag+'</div><div class="sub">'+DOW[dow].slice(0,3)+', '+MON[dt.getMonth()]+' '+dt.getDate()+' · '+label(c)+' · '+Math.round(pop||0)+'% precip</div></div>'
+        +'<div class="hl">'+Math.round(hi)+'°<span> / '+Math.round(lo)+'°</span></div></div>'
+        +'<div class="joke">'+esc(wj)+'</div>'
+        +'<div class="label">What Tyler wears</div>'
+        +'<ul class="chips">'+items.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>'
+        +'<p class="oj">'+esc(oj)+(addon?' '+esc(ADDON_JOKES[addon]):'')+'</p>'+weekend
+        +'</article>';
+    }
+    $("days").innerHTML=html;
+    var st=$("status");
+    if(isFallback){ st.className="status warn"; st.textContent="Couldn't reach live weather, so you're seeing sample data for "+place.name+". Try again soon."; }
+    else { st.className="status"; st.textContent="Live weather for "+place.name+(place.admin?", "+place.admin:"")+(place.country?" · "+place.country:"")+"."; }
+  }
+
+  function fetchJSON(url){
+    var ctl=new AbortController(), t=setTimeout(function(){ctl.abort()},8000);
+    return fetch(url,{signal:ctl.signal}).then(function(r){clearTimeout(t); if(!r.ok) throw new Error("HTTP "+r.status); return r.json();});
+  }
+
+  function load(place){
+    $("picks").hidden=true;
+    $("status").className="status"; $("status").textContent="Checking the sky for "+place.name+"…";
+    var url="https://api.open-meteo.com/v1/forecast?latitude="+place.lat+"&longitude="+place.lon
+      +"&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m"
+      +"&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max"
+      +"&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=6";
+    fetchJSON(url).then(function(j){
+      if(!j.current||!j.daily||!j.daily.time||j.daily.time.length<6) throw new Error("bad data");
+      render(place,j,false);
+    }).catch(function(){ render(place,fallbackData(),true); });
+  }
+
+  function search(q){
+    q=q.trim(); if(!q) return;
+    $("status").className="status"; $("status").textContent="Searching…";
+    fetchJSON("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(q)+"&count=5&language=en&format=json")
+    .then(function(j){
+      var r=j.results||[];
+      if(!r.length){ $("status").textContent="No city found for \""+q+"\". Try another spelling."; return; }
+      var places=r.map(function(x){return {name:x.name,admin:x.admin1||"",country:x.country||"",lat:x.latitude,lon:x.longitude}});
+      if(places.length===1){ load(places[0]); return; }
+      var ul=$("picks"); ul.innerHTML="";
+      places.forEach(function(pl){
+        var li=document.createElement("li"), b=document.createElement("button"); b.type="button";
+        b.innerHTML=esc(pl.name)+' <small>'+esc([pl.admin,pl.country].filter(Boolean).join(", "))+'</small>';
+        b.addEventListener("click",function(){ load(pl); });
+        li.appendChild(b); ul.appendChild(li);
+      });
+      ul.hidden=false; $("status").textContent="Pick the right one:";
+    }).catch(function(){ $("status").className="status warn"; $("status").textContent="City search is unavailable right now. Check your connection and try again."; });
+  }
+
+  $("f").addEventListener("submit",function(e){ e.preventDefault(); search($("q").value); });
+  load(DEFAULT);
+})();
+</script>
+</body>
+</html>
