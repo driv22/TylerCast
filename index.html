@@ -267,7 +267,8 @@ footer{text-align:center; color:var(--muted); font-size:12px; margin-top:18px}
 
   function dayNum(iso){ var p=iso.split("-"); return Math.floor(Date.UTC(+p[0],+p[1]-1,+p[2])/864e5); }
   function pick(pool, key, n, step, used){
-    var idx=((n*step)+key)%pool.length; var guard=0;
+    var h=0; for(var q=0;q<key.length;q++){ h=(h*31+key.charCodeAt(q))%9973; }
+    var idx=((n*step)+h)%pool.length; var guard=0;
     while(used[key+"-"+idx] && guard++<pool.length) idx=(idx+1)%pool.length;
     used[key+"-"+idx]=true; return pool[idx];
   }
@@ -313,7 +314,7 @@ footer{text-align:center; color:var(--muted); font-size:12px; margin-top:18px}
       var wj=pick(JOKES[k],"w"+k,n,7,used);
       var oj=pick(OUTFIT_JOKES[b],"o"+b,n,3,used);
       var school=(dow>=1&&dow<=5);
-      var tag=(i===1)?'<span class="badge">'+(school?'Tomorrow · school':'Tomorrow · no school')+'</span>':(school?'':'<span class="badge">No school</span>');
+      var tag=(i===1)?'<span class="badge">'+(school?'School day':'No school')+'</span>':(school?'':'<span class="badge">No school</span>');
       var weekend=(!school)?'<div class="oj">No school: pajamas are officially a valid outfit.</div>':'';
       html+='<article class="card'+(i===1?' tomorrow':'')+'" style="--accent:'+ACCENT[k]+'">'
         +'<div class="day-head"><div class="icon" aria-hidden="true">'+icon(c)+'</div>'
